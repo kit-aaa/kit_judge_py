@@ -29,6 +29,25 @@ def create():
     
     return '', 200
 
+@classroom.route('/', methods=['GET'])
+@jwt_required()
+def lookup():
+    
+    userId = get_jwt_identity()
+    user = Account.query.filter_by(id=userId).first()
+
+    if user.disabled:
+        return jsonify({'error': 'Account disabled'}), 403
+
+    if user.type == AccountType.professor:
+        classrooms = Classroom.query.filter_by(ownerId=userId)
+        return jsonify([c.as_dict() for c in classrooms]), 200
+    elif user.type == AccountType.student:
+        classrooms = user.classrooms
+        return jsonify([c.as_dict() for c in classrooms]), 200
+    else:
+        return jsonify({'error': 'Account type is not supported'}), 403
+
 @classroom.route('/<id>/member', methods=['GET'])
 @jwt_required()
 def lookup_member(id):
@@ -46,9 +65,9 @@ def lookup_member(id):
     if classroom.ownerId != userId:
         return jsonify({'error': 'Account is not owner of this classroom'}), 403
     
-    approves = classroom.approves
+    members = classroom.students
 
-    return jsonify([{'account_id': approve.member.id,'student_id': approve.member.studentId ,'name': approve.member.name} for approve in approves]), 200
+    return jsonify([{'account_id': member.id,'student_id': member.studentId ,'name': member.name} for member in members]), 200
 
 @classroom.route('/<id>/assignment', methods=['GET'])
 @jwt_required()
@@ -70,7 +89,7 @@ def lookup_assignment(id):
     return jsonify([{'id': assignment.id, 'title': assignment.title, 'start_date': assignment.startDate.isoformat(), 'end_date': assignment.endDate.isoformat()} for assignment in assignments]), 200
 
 @classroom.route('/<id>', methods=['GET'])
-def lookup(id):
+def lookup_by_id(id):
     classroom = Classroom.query.filter_by(id=id).first()
 
     if not classroom:

@@ -1,6 +1,7 @@
 import enum
 from datetime import datetime
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy.ext.associationproxy import association_proxy
 from werkzeug.security import generate_password_hash, check_password_hash
 
 db = SQLAlchemy()
@@ -40,6 +41,7 @@ class Account(db.Model):
     type = db.Column(IntEnum(AccountType), nullable=False)
     studentId = db.Column(db.Integer, nullable=True)
     disabled = db.Column(db.Boolean, default=False)
+    classrooms = association_proxy('classroom_associations', 'classroom')
 
     def __init__(self, email, pw, name, type, studentId):
         self.email = email
@@ -61,13 +63,17 @@ class Classroom(db.Model):
     semester = db.Column(db.Integer, nullable=False)
     ownerId = db.Column(db.Integer, db.ForeignKey('account.id'), nullable=False)
     disabled = db.Column(db.Boolean, default=False)
-    approves = db.relationship('ClassApprove')
+    owner = db.relationship('Account', uselist=False)
+    students = association_proxy('student_associations', 'student')
 
     def __init__(self, name, year, semester, ownerId):
         self.name = name
         self.year = year
         self.semester = semester
         self.ownerId = ownerId
+
+    def as_dict(self):
+       return {"id": self.id, "name": self.name, "year": self.year, "semester": self.semester, "professor_name": self.owner.name}
 
 class Assignment(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -98,7 +104,9 @@ class ClassApprove(db.Model):
     classroomId = db.Column(db.Integer, db.ForeignKey('classroom.id'), primary_key=True)
     studentId = db.Column(db.Integer, db.ForeignKey('account.id'), primary_key=True)
     approve = db.Column(db.Boolean, nullable=False, default=False)
-    member = db.relationship('Account', uselist=False)
+    
+    student = db.relationship(Account, backref="classroom_associations")
+    classroom = db.relationship(Classroom, backref="student_associations")
 
     def __init__(self, classroomId, studentId, approve):
         self.classroomId = classroomId

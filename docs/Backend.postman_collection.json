@@ -38,7 +38,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n    \"email\":\"prof2@test.com\",\r\n    \"password\":\"prof2\"\r\n}",
+							"raw": "{\r\n    \"email\":\"stu2@test.com\",\r\n    \"password\":\"stu2\"\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -341,7 +341,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "http://localhost:5000/classroom/2/member",
+							"raw": "http://localhost:5000/classroom/1/member",
 							"protocol": "http",
 							"host": [
 								"localhost"
@@ -349,7 +349,7 @@
 							"port": "5000",
 							"path": [
 								"classroom",
-								"2",
+								"1",
 								"member"
 							]
 						}
@@ -400,6 +400,26 @@
 							"path": [
 								"classroom",
 								"2"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "강의실 목록 (계정연관)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:5000/classroom/",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"classroom",
+								""
 							]
 						}
 					},

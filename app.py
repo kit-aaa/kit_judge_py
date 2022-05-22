@@ -45,7 +45,7 @@ if __name__ == "__main__":
     db.create_all()
 
     # 샘플데이터 삽입
-    #populate_data.populate()
+    populate_data.populate()
 
     # 프로덕션에서 bind ip 변경할 것
     server = WSGIServer(('0.0.0.0', 5000), app)
