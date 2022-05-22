@@ -1,0 +1,6 @@
+flask
+redis
+mariadb
+gevent
+Flask-SQLAlchemy
+flask-jwt-extended
