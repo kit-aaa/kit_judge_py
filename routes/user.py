@@ -8,7 +8,7 @@ user = Blueprint('user', __name__, url_prefix='/user')
 @user.route('/', methods=['POST'])
 def create():
     data = request.get_json()
-    account = Account(data['email'], data['password'], data['name'], data['type'], data['studentId'])
+    account = Account(data['email'], data['password'], data['name'], data['type'], data['student_id'])
     try:
         db.session.add(account)
         db.session.commit()
@@ -31,7 +31,7 @@ def modify():
     user.email = data['email'];
     user.password = data['password'];
     user.name = data['name'];
-    user.studentId = data['studentId'];
+    user.studentId = data['student_id'];
 
     try:
         db.session.commit()
