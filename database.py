@@ -1,15 +1,43 @@
+import enum
 from datetime import datetime
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 
 db = SQLAlchemy()
 
+class AccountType(enum.Enum):
+    student = 1
+    professor = 2
+    admin = 3
+
+# https://michaelcho.me/article/using-python-enums-in-sqlalchemy-models
+class IntEnum(db.TypeDecorator):
+    """
+    Enables passing in a Python enum and storing the enum's *value* in the db.
+    The default would have stored the enum's *name* (ie the string).
+    """
+    impl = db.Integer
+
+    def __init__(self, enumtype, *args, **kwargs):
+        super(IntEnum, self).__init__(*args, **kwargs)
+        self._enumtype = enumtype
+
+    def process_bind_param(self, value, dialect):
+        if isinstance(value, int):
+            return value
+
+        return value.value
+
+    def process_result_value(self, value, dialect):
+        return self._enumtype(value)
+
+
 class Account(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(120), unique=True, nullable=False)
     pw = db.Column(db.String(120), nullable=False)
     name = db.Column(db.String(120), nullable=False)
-    type = db.Column(db.Integer, nullable=False)
+    type = db.Column(IntEnum(AccountType), nullable=False)
     studentId = db.Column(db.Integer, nullable=True)
     disabled = db.Column(db.Boolean, default=False)
 
@@ -32,25 +60,50 @@ class Classroom(db.Model):
     year = db.Column(db.Integer, nullable=False)
     semester = db.Column(db.Integer, nullable=False)
     ownerId = db.Column(db.Integer, db.ForeignKey('account.id'), nullable=False)
+    disabled = db.Column(db.Boolean, default=False)
+    approves = db.relationship('ClassApprove')
+
+    def __init__(self, name, year, semester, ownerId):
+        self.name = name
+        self.year = year
+        self.semester = semester
+        self.ownerId = ownerId
 
 class Assignment(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     author = db.Column(db.Integer, db.ForeignKey('account.id'), nullable=False)
-    classId = db.Column(db.Integer, db.ForeignKey('classroom.id'), nullable=False)
-    title = db.Column(db.String(120), nullable=False)
-    desc = db.Column(db.String(120), nullable=False)
+    classroomId = db.Column(db.Integer, db.ForeignKey('classroom.id'), nullable=False)
+    title = db.Column(db.String(120), nullable=True)
+    desc = db.Column(db.String(120), nullable=True)
     date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow())
-    startDate = db.Column(db.DateTime, nullable=False)
-    endDate = db.Column(db.DateTime, nullable=False)
-    score = db.Column(db.Integer, nullable=False)
-    parentId = db.Column(db.Integer, nullable=False)
-    feedback = db.Column(db.Text, nullable=False)
+    startDate = db.Column(db.DateTime, nullable=True)
+    endDate = db.Column(db.DateTime, nullable=True)
+    score = db.Column(db.Integer, nullable=True)
+    parentId = db.Column(db.Integer, nullable=True)
+    feedback = db.Column(db.Text, nullable=True)
+
+    def __init__(self, author, classroomId, title, desc, startDate, endDate, parentId):
+        self.author = author
+        self.classroomId = classroomId
+        self.title = title
+        self.desc = desc
+        self.startDate = startDate
+        self.endDate = endDate
+        self.parentId = parentId
+
+    def as_dict(self):
+       return {c.name: getattr(self, c.name) for c in self.__table__.columns}
 
 class ClassApprove(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    classId = db.Column(db.Integer, db.ForeignKey('classroom.id'), nullable=False)
-    studentId = db.Column(db.Integer, db.ForeignKey('account.id'), nullable=False)
+    classroomId = db.Column(db.Integer, db.ForeignKey('classroom.id'), primary_key=True)
+    studentId = db.Column(db.Integer, db.ForeignKey('account.id'), primary_key=True)
     approve = db.Column(db.Boolean, nullable=False, default=False)
+    member = db.relationship('Account', uselist=False)
+
+    def __init__(self, classroomId, studentId, approve):
+        self.classroomId = classroomId
+        self.studentId = studentId
+        self.approve = approve
 
 class Testcase(db.Model):
     id = db.Column(db.Integer, primary_key=True)
