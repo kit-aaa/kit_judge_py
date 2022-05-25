@@ -91,15 +91,16 @@ class Assignment(db.Model):
     score = db.Column(db.Integer, nullable=True)
     parentId = db.Column(db.Integer, nullable=True)
     feedback = db.Column(db.Text, nullable=True)
+    enable = db.Column(db.Boolean, default=True)
 
-    def __init__(self, author, classroomId, title, desc, startDate, endDate, parentId):
+    def __init__(self, author, classroomId, title, desc, startDate, endDate):
         self.author = author
         self.classroomId = classroomId
         self.title = title
         self.desc = desc
         self.startDate = startDate
         self.endDate = endDate
-        self.parentId = parentId
+        self.enable = True
 
     def as_dict(self):
        return {c.name: getattr(self, c.name) for c in self.__table__.columns}
@@ -133,6 +134,9 @@ class TestResult(db.Model):
     success = db.Column(db.Boolean, nullable=False)
     failCause = db.Column(db.Text, nullable=False)
 
+    def as_dict(self):
+       return {c.name: getattr(self, c.name) for c in self.__table__.columns}
+       
 class TokenBlocklist(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     jti = db.Column(db.String(36), nullable=False, index=True)
