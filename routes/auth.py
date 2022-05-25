@@ -7,6 +7,7 @@ from flask_jwt_extended import create_access_token, jwt_required, get_jwt, get_j
 
 auth = Blueprint('auth', __name__, url_prefix='/auth')
 
+# 로그인 (토큰 생성)
 @auth.route('/login', methods=['POST'])
 def login():
     data = request.get_json()
@@ -21,6 +22,8 @@ def login():
 
     return jsonify({'error': 'Authentication failed'}), 401
 
+# 로그아웃 (토큰 폐기)
+# Access 토큰과 Refresh 토큰 두 개 폐기 필수
 @auth.route('/logout', methods=['DELETE'])
 @jwt_required(verify_type=False)
 def logout():
@@ -32,6 +35,8 @@ def logout():
     db.session.commit()
     return '', 200
 
+# Access 토큰 재발급
+# Refresh 토큰 사용 필요
 @auth.route('/refresh', methods=['GET'])
 @jwt_required(refresh=True)
 def refresh_token():

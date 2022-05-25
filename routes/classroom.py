@@ -5,6 +5,7 @@ from database import Assignment, db, AccountType, Account, Classroom, ClassAppro
 
 classroom = Blueprint('classroom', __name__, url_prefix='/classroom')
 
+# 강의 생성 (교수자만 가능)
 @classroom.route('/', methods=['POST'])
 @jwt_required()
 def create():
@@ -29,6 +30,7 @@ def create():
     
     return '', 200
 
+# 내 계정이 속한 강의 조회
 @classroom.route('/', methods=['GET'])
 @jwt_required()
 def lookup():
@@ -48,6 +50,7 @@ def lookup():
     else:
         return jsonify({'error': 'Account type is not supported'}), 403
 
+# 강의 수강 학생 조회
 @classroom.route('/<id>/member', methods=['GET'])
 @jwt_required()
 def lookup_member(id):
@@ -67,8 +70,9 @@ def lookup_member(id):
     
     members = classroom.students
 
-    return jsonify([{'account_id': member.id,'student_id': member.studentId ,'name': member.name} for member in members]), 200
+    return jsonify([{'account_id': member.id,'student_id': member.studentId ,'name': member.name, 'approved': member.classrooms[str(id)]} for member in members]), 200
 
+# 강의 과제 조회
 @classroom.route('/<id>/assignment', methods=['GET'])
 @jwt_required()
 def lookup_assignment(id):
@@ -88,6 +92,7 @@ def lookup_assignment(id):
 
     return jsonify([{'id': assignment.id, 'title': assignment.title, 'start_date': assignment.startDate.isoformat(), 'end_date': assignment.endDate.isoformat()} for assignment in assignments]), 200
 
+# ID로 강의 조회
 @classroom.route('/<id>', methods=['GET'])
 def lookup_by_id(id):
     classroom = Classroom.query.filter_by(id=id).first()
@@ -99,6 +104,7 @@ def lookup_by_id(id):
 
     return jsonify({"class_name": classroom.name, "year": classroom.year, "semester": classroom.semester, "professor_name": owner.name}), 200
 
+# 강의 정보 수정
 @classroom.route('/<id>', methods=['PUT'])
 @jwt_required()
 def modify(id):
@@ -129,6 +135,7 @@ def modify(id):
     
     return '', 200
 
+# 강의 비활성화
 @classroom.route('/<id>', methods=['DELETE'])
 @jwt_required()
 def disable(id):

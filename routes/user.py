@@ -5,6 +5,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 
 user = Blueprint('user', __name__, url_prefix='/user')
 
+# 계정 생성
 @user.route('/', methods=['POST'])
 def create():
     data = request.get_json()
@@ -17,6 +18,7 @@ def create():
 
     return '', 200
 
+# 내 계정 정보 수정
 @user.route('/me', methods=['PUT'])
 @jwt_required()
 def modify():
@@ -38,7 +40,7 @@ def modify():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
     
-
+# 내 계정 비활성화
 @user.route('/me', methods=['DELETE'])
 @jwt_required()
 def disable():
@@ -52,6 +54,7 @@ def disable():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+# 내 계정 정보 조회
 @user.route('/me', methods=['GET'])
 @jwt_required()
 def lookup():
