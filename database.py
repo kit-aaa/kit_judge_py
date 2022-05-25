@@ -41,7 +41,11 @@ class Account(db.Model):
     type = db.Column(IntEnum(AccountType), nullable=False)
     studentId = db.Column(db.Integer, nullable=True)
     disabled = db.Column(db.Boolean, default=False)
-    classrooms = association_proxy('classroom_associations', 'classroom')
+    classrooms = association_proxy(
+        'classroom_associations',
+        'classroom',
+        creator=lambda k, v: ClassApprove(classroomId=k, approve=v),
+    )
 
     def __init__(self, email, pw, name, type, studentId):
         self.email = email
@@ -112,6 +116,9 @@ class ClassApprove(db.Model):
         self.classroomId = classroomId
         self.studentId = studentId
         self.approve = approve
+    
+    def as_dict(self):
+       return {'classroom_id': self.classroomId, 'student_id': self.studentId, 'approve': self.approve}
 
 class Testcase(db.Model):
     id = db.Column(db.Integer, primary_key=True)

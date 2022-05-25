@@ -42,10 +42,13 @@ def populate():
 
     # 강의실 이수생
     student_classroom1_approve = ClassApprove(1, 1, True)
+    student_classroom2_noapprove = ClassApprove(2, 1, False)
+
     student2_classroom1_approve = ClassApprove(1, 2, True)
     student2_classroom2_approve = ClassApprove(2, 2, True)
 
     db.session.add(student_classroom1_approve)
+    db.session.add(student_classroom2_noapprove)
     db.session.add(student2_classroom1_approve)
     db.session.add(student2_classroom2_approve)
 
