@@ -1,8 +1,9 @@
+from unittest import TestCase
 from flask.json import jsonify
 from flask import Blueprint, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
-from database import Account, Classroom, db, AccountType, Assignment, TestResult
+from database import Account, Classroom, TestResult, db, AccountType, Assignment
 
 assignment = Blueprint('assignment', __name__, url_prefix='/assignment')
 
@@ -120,6 +121,7 @@ def delete(id):
     
     return '', 200
 
+# 피드백 등록
 @assignment.route('/<id>/feedback', methods=['POST'])
 @jwt_required()
 def create_feedback(id):
@@ -145,7 +147,22 @@ def create_feedback(id):
     
     return '', 200
 
-@assignment.route('/<id>/result', methods=['GET'])
+# 테스트케이스 목록 조회
+@assignment.route('/<id>/testcase', methods=['GET'])
+@jwt_required()
+def lookup_testcase(id):    
+    userId = get_jwt_identity()
+    user = Account.query.filter_by(id=userId).first()
+
+    if user.disabled:
+        return jsonify({'error': 'Account disabled'}), 403
+    
+    testCases = TestCase.filter_by(assignmentId=id)
+    
+    return jsonify(testCases), 200
+
+# 테스트 결과 목록 조회
+@assignment.route('/<id>/testresult', methods=['GET'])
 @jwt_required()
 def lookup_testcase(id):    
     userId = get_jwt_identity()
