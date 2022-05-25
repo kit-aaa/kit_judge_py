@@ -126,6 +126,12 @@ class Testcase(db.Model):
     assignmentId = db.Column(db.Integer, db.ForeignKey('assignment.id'), nullable=False)
     input = db.Column(db.Text, nullable=False)
     output = db.Column(db.Text, nullable=False)
+    enable = db.Column(db.Boolean, default=True)
+
+    def __init__(self, assignmentId, input, output):
+        self.assignmentId = assignmentId
+        self.input = input
+        self.output = output
 
     def as_dict(self):
        return {c.name: getattr(self, c.name) for c in self.__table__.columns}
