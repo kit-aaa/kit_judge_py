@@ -1,5 +1,6 @@
 from gevent.pywsgi import WSGIServer
 from flask import Flask
+from flask_cors import CORS
 from database import db, TokenBlocklist
 from flask_jwt_extended import JWTManager
 from datetime import timedelta
@@ -9,6 +10,7 @@ import util
 from util import populate_data
 
 app = Flask(__name__)
+CORS(app)
 
 ACCESS_EXPIRES = timedelta(hours=1)
 
