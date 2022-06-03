@@ -78,7 +78,7 @@ def approve():
 # 요청 승인 취소 (교수)
 @approval.route('/revoke', methods=['POST'])
 @jwt_required()
-def approve():
+def revoke():
     userId = get_jwt_identity()
     user = Account.query.filter_by(id=userId).first()
 

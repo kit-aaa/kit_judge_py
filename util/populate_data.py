@@ -28,10 +28,10 @@ def populate():
     db.session.commit()
 
     # 과제
-    classroom1_assign = Assignment(3, 1, "강의실1 과제", "아시죠?", datetime.now() - timedelta(days=14), datetime.now() + timedelta(days=14), None)
-    classroom1_assign2 = Assignment(3, 1, "강의실1 과제2", "테스트 숙제", datetime.now() - timedelta(days=14), datetime.now() + timedelta(days=14), None)
-    classroom2_assign = Assignment(4, 2, "강의실2 과제", "수업시간에 이야기 한거 제출하세요", datetime.now() - timedelta(days=14), datetime.now() + timedelta(days=14), None)
-    classroom2_assign2 = Assignment(4, 2, "강의실2 과제2", "수업시간에 이야기 한거 제출하세요!!!!!", datetime.now() - timedelta(days=14), datetime.now() + timedelta(days=14), None)
+    classroom1_assign = Assignment(3, 1, "강의실1 과제", "아시죠?", datetime.now() - timedelta(days=14), datetime.now() + timedelta(days=14))
+    classroom1_assign2 = Assignment(3, 1, "강의실1 과제2", "테스트 숙제", datetime.now() - timedelta(days=14), datetime.now() + timedelta(days=14))
+    classroom2_assign = Assignment(4, 2, "강의실2 과제", "수업시간에 이야기 한거 제출하세요", datetime.now() - timedelta(days=14), datetime.now() + timedelta(days=14))
+    classroom2_assign2 = Assignment(4, 2, "강의실2 과제2", "수업시간에 이야기 한거 제출하세요!!!!!", datetime.now() - timedelta(days=14), datetime.now() + timedelta(days=14))
 
     db.session.add(classroom1_assign)
     db.session.add(classroom1_assign2)

@@ -164,7 +164,7 @@ def lookup_testcase(id):
 # 테스트 결과 목록 조회
 @assignment.route('/<id>/testresult', methods=['GET'])
 @jwt_required()
-def lookup_testcase(id):    
+def lookup_testresult(id):    
     userId = get_jwt_identity()
     user = Account.query.filter_by(id=userId).first()
 
