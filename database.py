@@ -6,7 +6,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 
 db = SQLAlchemy()
 
-class AccountType(enum.Enum):
+class AccountType(enum.IntEnum):
     student = 1
     professor = 2
     admin = 3

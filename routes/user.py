@@ -31,7 +31,7 @@ def modify():
     data = request.get_json()
 
     user.email = data['email'];
-    user.password = data['password'];
+    user.password = user.set_password(data['password'])
     user.name = data['name'];
     user.studentId = data['student_id'];
 
@@ -39,6 +39,8 @@ def modify():
         db.session.commit()
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+    
+    return '', 200
     
 # 내 계정 비활성화
 @user.route('/me', methods=['DELETE'])
@@ -53,6 +55,8 @@ def disable():
         db.session.commit()
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+    
+    return '', 200
 
 # 내 계정 정보 조회
 @user.route('/me', methods=['GET'])
