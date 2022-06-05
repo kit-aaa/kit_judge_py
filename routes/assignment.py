@@ -1,12 +1,22 @@
 from unittest import TestCase
 from flask.json import jsonify
-from flask import Blueprint, request
+from flask import Blueprint, request, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity
 import datetime
+from werkzeug.utils import secure_filename
+import os
 
 from database import Account, Classroom, TestResult, db, AccountType, Assignment
 
 assignment = Blueprint('assignment', __name__, url_prefix='/assignment')
+
+# 업로드 허용할 확장자
+ALLOWED_EXTENSIONS = {'zip', 'java'}
+
+# 확장자 체크
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 # 강의 전체 과제 조회
 @assignment.route('/', methods=['GET'])
@@ -126,6 +136,37 @@ def delete(id):
         return jsonify({'error': str(e)}), 500
     
     return '', 200
+
+# 과제 제출
+@assignment.route('/<id>/submit', methods=['POST'])
+@jwt_required()
+def submit(id):
+    userId = get_jwt_identity()
+    data = request.form.get('data')
+
+    # check if the post request has the file part
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file part in the request'}), 400
+    file = request.files['file']
+    # If the user does not select a file, the browser submits an
+    # empty file without a filename.
+    if file.filename == '':
+        return jsonify({'error': 'Blank file submitted'}), 400
+    if file and allowed_file(file.filename):
+        filename = secure_filename(file.filename)
+        file.save(os.path.join(current_app.config['UPLOAD_FOLDER'], filename))
+
+        assign = Assignment(userId, data['classroom_id'], None, data['desc'], None, None)
+        assign.parentId = id
+        assign.filename = filename
+
+        try:
+            db.session.add(assign)
+            db.session.commit()
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+
+        return '', 200
 
 # 피드백 등록
 @assignment.route('/<id>/feedback', methods=['POST'])

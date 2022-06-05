@@ -92,6 +92,7 @@ class Assignment(db.Model):
     parentId = db.Column(db.Integer, nullable=True)
     feedback = db.Column(db.Text, nullable=True)
     enable = db.Column(db.Boolean, default=True)
+    filename = db.Column(db.String(120), nullable=True)
 
     def __init__(self, author, classroomId, title, desc, startDate, endDate):
         self.author = author

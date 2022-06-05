@@ -19,6 +19,8 @@ app.config['SECRET_KEY'] = 'CHANGEME!'
 app.config['JWT_SECRET_KEY'] = 'CHANGEMEPLZ!'
 app.config["JWT_ACCESS_TOKEN_EXPIRES"] = ACCESS_EXPIRES
 
+app.config['UPLOAD_FOLDER'] = 'uploads'
+
 jwt = JWTManager(app)
 
 # SQLite for testing
