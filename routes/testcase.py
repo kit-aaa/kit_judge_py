@@ -19,7 +19,7 @@ def create():
 
     # 권한 체크 필요
     
-    testcase = Testcase(userId, data['assignment_id'], data['input'], data['output'])
+    testcase = Testcase(data['assignment_id'], data['input'], data['output'])
 
     try:
         db.session.add(testcase)
