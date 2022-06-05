@@ -2,6 +2,7 @@ from unittest import TestCase
 from flask.json import jsonify
 from flask import Blueprint, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
+import datetime
 
 from database import Account, Classroom, TestResult, db, AccountType, Assignment
 
@@ -38,8 +39,13 @@ def create():
         return jsonify({'error': 'Account disabled'}), 403
 
     # 권한 체크 필요
-    
-    assign = Assignment(userId, data['classroom_id'], data['title'], data['desc'], data['start_date'], data['end_date'], data['parent_id'])
+    try:
+        start_date = datetime.datetime.strptime(data['start_date'], '%Y-%m-%dT%H:%M:%S.%fZ')
+        end_date = datetime.datetime.strptime(data['end_date'], '%Y-%m-%dT%H:%M:%S.%fZ')
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+    assign = Assignment(userId, data['classroom_id'], data['title'], data['desc'], start_date, end_date)
 
     try:
         db.session.add(assign)
