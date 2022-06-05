@@ -38,7 +38,7 @@ def delete(id):
     if user.disabled:
         return jsonify({'error': 'Account disabled'}), 403
 
-    testcase = Testcase.filter_by(id=id).first()
+    testcase = Testcase.query.filter_by(id=id).first()
 
     testcase.enable = False
 

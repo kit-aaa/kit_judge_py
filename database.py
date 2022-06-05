@@ -81,7 +81,8 @@ class Classroom(db.Model):
 
 class Assignment(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    author = db.Column(db.Integer, db.ForeignKey('account.id'), nullable=False)
+    authorId = db.Column(db.Integer, db.ForeignKey('account.id'), nullable=False)
+    author = db.relationship('Account', uselist=False)
     classroomId = db.Column(db.Integer, db.ForeignKey('classroom.id'), nullable=False)
     title = db.Column(db.String(120), nullable=True)
     desc = db.Column(db.String(120), nullable=True)
@@ -95,16 +96,13 @@ class Assignment(db.Model):
     filename = db.Column(db.String(120), nullable=True)
 
     def __init__(self, author, classroomId, title, desc, startDate, endDate):
-        self.author = author
+        self.authorId = author
         self.classroomId = classroomId
         self.title = title
         self.desc = desc
         self.startDate = startDate
         self.endDate = endDate
         self.enable = True
-
-    def as_dict(self):
-       return {c.name: getattr(self, c.name) for c in self.__table__.columns}
 
 class ClassApprove(db.Model):
     classroomId = db.Column(db.Integer, db.ForeignKey('classroom.id'), primary_key=True)
@@ -134,18 +132,13 @@ class Testcase(db.Model):
         self.input = input
         self.output = output
 
-    def as_dict(self):
-       return {c.name: getattr(self, c.name) for c in self.__table__.columns}
-
 class TestResult(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     assignmentId = db.Column(db.Integer, db.ForeignKey('assignment.id'), nullable=False)
     testcaseId = db.Column(db.Integer, db.ForeignKey('testcase.id'), nullable=False)
+    time = db.Column(db.DateTime, nullable=False)
     success = db.Column(db.Boolean, nullable=False)
-    failCause = db.Column(db.Text, nullable=False)
-
-    def as_dict(self):
-       return {c.name: getattr(self, c.name) for c in self.__table__.columns}
+    failCause = db.Column(db.Text, nullable=True)
        
 class TokenBlocklist(db.Model):
     id = db.Column(db.Integer, primary_key=True)

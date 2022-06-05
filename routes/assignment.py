@@ -1,4 +1,3 @@
-from unittest import TestCase
 from flask.json import jsonify
 from flask import Blueprint, request, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity
@@ -6,7 +5,7 @@ import datetime
 from werkzeug.utils import secure_filename
 import os
 
-from database import Account, Classroom, TestResult, db, AccountType, Assignment
+from database import Account, Classroom, TestResult, db, AccountType, Assignment, Testcase
 
 assignment = Blueprint('assignment', __name__, url_prefix='/assignment')
 
@@ -30,11 +29,11 @@ def lookup():
     if user.disabled:
         return jsonify({'error': 'Account disabled'}), 403
     
-    assigns = Assignment.filter_by(classroomId=data['classroom_id'])
+    assigns = Assignment.query.filter_by(classroomId=data['classroom_id'])
 
     # 권한 체크 필요
 
-    return jsonify([{"id": a.id, "name": a.title, "date": a.date, "start_date": a.startDate, "end_date": a.endDate} for a in assigns]), 200
+    return jsonify([{"id": a.id, "name": a.title, "date": a.date.isoformat(), "start_date": a.startDate.isoformat(), "end_date": a.endDate.isoformat()} for a in assigns]), 200
 
 # 과제 생성
 @assignment.route('/', methods=['POST'])
@@ -50,8 +49,8 @@ def create():
 
     # 권한 체크 필요
     try:
-        start_date = datetime.datetime.strptime(data['start_date'], '%Y-%m-%dT%H:%M:%S.%fZ')
-        end_date = datetime.datetime.strptime(data['end_date'], '%Y-%m-%dT%H:%M:%S.%fZ')
+        start_date = datetime.datetime.strptime(data['start_date'], '%Y-%m-%dT%H:%M:%S.%f')
+        end_date = datetime.datetime.strptime(data['end_date'], '%Y-%m-%dT%H:%M:%S.%f')
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -75,16 +74,28 @@ def lookup_detail(id):
     if user.disabled:
         return jsonify({'error': 'Account disabled'}), 403
     
-    assign = Assignment.filter_by(id=id).first()
+    assign = Assignment.query.filter_by(id=id).first()
 
     if assign.enable == False:
         return '', 404
 
     # 권한 체크 필요
 
-    return jsonify(assign), 200
+    # 교수가 낸 과제면 parent_id, score, feedback, filename은 null
+    return jsonify({'id': assign.id,
+    'author_id': assign.authorId,
+    'author_name': assign.author.name,
+    'title': assign.title,
+    'desc': assign.desc,
+    'date': assign.date.isoformat(),
+    'start_date': assign.startDate.isoformat(),
+    'end_date': assign.endDate.isoformat(),
+    'parent_id': assign.parentId,
+    'score': assign.score,
+    'feedback': assign.feedback,
+    'filename': assign.filename}), 200
 
-# 과제/댓글 수정
+# 과제 수정
 @assignment.route('/<id>', methods=['PUT'])
 @jwt_required()
 def modify(id):
@@ -96,7 +107,7 @@ def modify(id):
     if user.disabled:
         return jsonify({'error': 'Account disabled'}), 403
     
-    assign = Assignment.filter_by(id=id).first()
+    assign = Assignment.query.filter_by(id=id).first()
 
     # 권한 체크 필요
 
@@ -112,7 +123,7 @@ def modify(id):
     
     return '', 200
 
-# 과제/댓글 비활성화
+# 과제 비활성화(삭제)
 @assignment.route('/<id>', methods=['DELETE'])
 @jwt_required()
 def delete(id):
@@ -124,7 +135,7 @@ def delete(id):
     if user.disabled:
         return jsonify({'error': 'Account disabled'}), 403
     
-    assign = Assignment.filter_by(id=id).first()
+    assign = Assignment.query.filter_by(id=id).first()
 
     # 권한 체크 필요
 
@@ -137,7 +148,7 @@ def delete(id):
     
     return '', 200
 
-# 과제 제출
+# 과제 제출 (학생)
 @assignment.route('/<id>/submit', methods=['POST'])
 @jwt_required()
 def submit(id):
@@ -168,6 +179,22 @@ def submit(id):
 
         return '', 200
 
+# 제출 과제 조회 (교수)
+@assignment.route('/<id>/submissions', methods=['GET'])
+@jwt_required()
+def lookup_submissions(id):
+    userId = get_jwt_identity()
+    user = Account.query.filter_by(id=userId).first()
+
+    if user.disabled:
+        return jsonify({'error': 'Account disabled'}), 403
+    
+    assigns = Assignment.query.filter_by(parentId=id)
+
+    # 권한 체크 필요
+
+    return jsonify([{'id': assign.id, 'author_id': assign.authorId, 'date': assign.date.isoformat(), 'author_name': assign.author.name, 'score': assign.score} for assign in assigns]), 200
+
 # 피드백 등록
 @assignment.route('/<id>/feedback', methods=['POST'])
 @jwt_required()
@@ -180,7 +207,7 @@ def create_feedback(id):
     if user.disabled:
         return jsonify({'error': 'Account disabled'}), 403
     
-    assign = Assignment.filter_by(id=id).first()
+    assign = Assignment.query.filter_by(id=id).first()
 
     # 권한 체크 필요
 
@@ -204,9 +231,9 @@ def lookup_testcase(id):
     if user.disabled:
         return jsonify({'error': 'Account disabled'}), 403
     
-    testCases = TestCase.filter_by(assignmentId=id)
+    testcases = Testcase.query.filter_by(assignmentId=id)
     
-    return jsonify(testCases), 200
+    return jsonify([{'id': testcase.id, 'assignment_id': testcase.assignmentId, 'input': testcase.input, 'output': testcase.output, 'enable': testcase.enable} for testcase in testcases]), 200
 
 # 테스트 결과 목록 조회
 @assignment.route('/<id>/testresult', methods=['GET'])
@@ -218,6 +245,6 @@ def lookup_testresult(id):
     if user.disabled:
         return jsonify({'error': 'Account disabled'}), 403
     
-    testResults = TestResult.filter_by(assignmentId=id)
+    testResults = TestResult.query.filter_by(assignmentId=id)
     
-    return jsonify(testResults), 200
+    return jsonify([{'id': result.id, 'assignment_id': result.assignmentId, "testcase_id": result.testcaseId, "date": result.time, "is_success": result.success, "fail_cause": result.failCause} for result in testResults]), 200
