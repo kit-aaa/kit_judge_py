@@ -43,8 +43,10 @@ def create():
         db.session.commit()
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+    db.session.refresh(assign)
     
-    return '', 200
+    return jsonify({'id': assign.id}), 200
 
 # 과제 조회
 @assignment.route('/<id>', methods=['GET'])
