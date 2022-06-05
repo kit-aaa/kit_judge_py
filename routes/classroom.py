@@ -70,7 +70,7 @@ def lookup_member(id):
     
     members = classroom.students
 
-    return jsonify([{'account_id': member.id,'student_id': member.studentId ,'name': member.name, 'approved': member.classrooms[str(id)]} for member in members]), 200
+    return jsonify([{'account_id': member.id,'student_id': member.studentId ,'name': member.name, 'approved': ClassApprove.query.filter_by(classroomId=id, studentId=member.id).first().approve} for member in members]), 200
 
 # 강의 과제 조회
 @classroom.route('/<id>/assignment', methods=['GET'])
