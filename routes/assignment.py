@@ -17,24 +17,6 @@ def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-# 강의 전체 과제 조회
-@assignment.route('/', methods=['GET'])
-@jwt_required()
-def lookup():
-    data = request.get_json()
-    
-    userId = get_jwt_identity()
-    user = Account.query.filter_by(id=userId).first()
-
-    if user.disabled:
-        return jsonify({'error': 'Account disabled'}), 403
-    
-    assigns = Assignment.query.filter_by(classroomId=data['classroom_id'])
-
-    # 권한 체크 필요
-
-    return jsonify([{"id": a.id, "name": a.title, "date": a.date.isoformat(), "start_date": a.startDate.isoformat(), "end_date": a.endDate.isoformat()} for a in assigns]), 200
-
 # 과제 생성
 @assignment.route('/', methods=['POST'])
 @jwt_required()

@@ -90,7 +90,7 @@ def lookup_assignment(id):
     
     assignments = Assignment.query.filter_by(classroomId=id, parentId=None).all()
 
-    return jsonify([{'id': assignment.id, 'title': assignment.title, 'start_date': assignment.startDate.isoformat(), 'end_date': assignment.endDate.isoformat()} for assignment in assignments]), 200
+    return jsonify([{"id": a.id, "title": a.title, "date": a.date.isoformat(), "start_date": a.startDate.isoformat(), "end_date": a.endDate.isoformat()} for a in assignments]), 200
 
 # ID로 강의 조회
 @classroom.route('/<id>', methods=['GET'])
