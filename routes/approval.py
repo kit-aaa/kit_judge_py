@@ -1,7 +1,7 @@
 from flask.json import jsonify
 from flask import Blueprint, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from database import Account, ClassApprove, db, AccountType
+from database import Account, ClassApprove, Classroom, db, AccountType
 
 approval = Blueprint('approval', __name__, url_prefix='/approval')
 
@@ -17,7 +17,16 @@ def lookup():
     
     if user.type == AccountType.student:
         classApprove = ClassApprove.query.filter_by(studentId=userId, approve=False)
-        return jsonify([c.as_dict() for c in classApprove]), 200
+        return jsonify([{"classroom_id": ca.classroomId, "classroom_name": ca.classroom.name} for ca in classApprove]), 200
+    elif user.type == AccountType.professor:
+        professor_classrooms = Classroom.query.filter_by(ownerId=userId)
+
+        requested_approvals = []
+        for classroom in professor_classrooms:
+            classApprove = ClassApprove.query.filter_by(classroomId=classroom.id, approve=False)
+            requested_approvals += [{"student_id": ca.studentId, "student_name": ca.student.name} for ca in classApprove]
+
+        return jsonify(requested_approvals), 200
     else:
         return jsonify({'error': 'Account type mismatch'}), 403
 
