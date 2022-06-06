@@ -16,7 +16,7 @@ ALLOWED_EXTENSIONS = {'zip', 'java'}
 # 채점 서버 사용할건지
 JUDGEMENT_ENABLED = True
 # 채점 서버 Job endpoint
-JUDGEMENT_ENDPOINT = "http://kumohcheck-jud:5000/job"
+JUDGEMENT_ENDPOINT = "http://kumohcheck.d-o-g.fun:8787/job"
 
 # 확장자 체크
 def allowed_file(filename):
@@ -146,14 +146,13 @@ def submit(id):
     data = request.form
     
     # "~/VSCode\kit_judge_testDB_venv" = 로컬 백서버 테스트 환경
-    path = "kit_judge_testDB_venv" + "\\" + current_app.config['UPLOAD_FOLDER'] + "\\" 
+    #path = "kit_judge_testDB_venv" + "\\" + current_app.config['UPLOAD_FOLDER'] + "\\" 
     
     # 확장자 확인 (.zip / .java) / 파일 하나만 업로드
     file = request.files.get('file') # formData에서의 키 값이 file인 value
     if file != None: # 업로드 / 미업로드 확인
         if file and allowed_file(file.filename):
             filename = secure_filename(file.filename)
-            file.save(path + filename)
 
             assignment = Assignment.query.filter_by(id=id).first();
             assign = Assignment(userId, assignment.classroomId, None, data.get('desc'), None, None)
@@ -189,51 +188,6 @@ def submit(id):
         
     else:
         return jsonify({'error': 'file not uploaded'}), 521
-
-
-# 과제 제출 (학생)
-@assignment.route('/<id>/submit', methods=['POST'])
-@jwt_required()
-def submit(id):
-    userId = get_jwt_identity()
-    data = request.form.get('data')
-
-    # check if the post request has the file part
-    if 'file' not in request.files:
-        return jsonify({'error': 'No file part in the request'}), 400
-    file = request.files['file']
-    # If the user does not select a file, the browser submits an
-    # empty file without a filename.
-    if file.filename == '':
-        return jsonify({'error': 'Blank file submitted'}), 400
-    if file and allowed_file(file.filename):
-        filename = secure_filename(file.filename)
-
-        assign = Assignment(userId, data['classroom_id'], None, data['desc'], None, None)
-        assign.parentId = id
-        assign.filename = filename
-
-        try:
-            db.session.add(assign)
-            db.session.commit()
-        except Exception as e:
-            return jsonify({'error': str(e)}), 500
-
-        db.session.refresh(assign)
-
-        file.save(os.path.join(current_app.config['UPLOAD_FOLDER'], assign.id, filename))
-        
-        if JUDGEMENT_ENABLED:
-            parent_testcases = Testcase.query.filter_by(assignmentId=id)
-            testcase_ids = [testcase.id for testcase in parent_testcases]
-            data = {'assignment_id': assign.id, 'testcase_ids': testcase_ids, 'filename': filename}
-            resp = requests.post(url=JUDGEMENT_ENDPOINT, data=data)
-            if resp.status_code != 200:
-                return jsonify({'warning': 'Failed to query judgement server'}), 200
-
-        return '', 200
-    
-    return jsonify({'error': 'Not allowed file types!'}), 400
 
 # 제출 과제 조회 (교수)
 @assignment.route('/<id>/submissions', methods=['GET'])
