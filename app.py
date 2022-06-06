@@ -24,7 +24,7 @@ app.config['UPLOAD_FOLDER'] = 'uploads'
 jwt = JWTManager(app)
 
 # SQLite for testing
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mariadb+mariadbconnector://kumohcheck:checkuser@kumohcheckdb:3306/kumohcheck'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mariadb+mariadbconnector://kumohcheck:checkuser@192.168.50.87:3307/kumohcheck'
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 app.register_blueprint(approval.approval)

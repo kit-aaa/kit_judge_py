@@ -1,5 +1,4 @@
 flask
-redis
 mariadb
 gevent
 Flask-SQLAlchemy
