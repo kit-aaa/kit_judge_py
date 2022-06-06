@@ -14,9 +14,9 @@ assignment = Blueprint('assignment', __name__, url_prefix='/assignment')
 ALLOWED_EXTENSIONS = {'zip', 'java'}
 
 # 채점 서버 사용할건지
-JUDGEMENT_ENABLED = False
+JUDGEMENT_ENABLED = True
 # 채점 서버 Job endpoint
-JUDGEMENT_ENDPOINT = "http://localhost:3000/job"
+JUDGEMENT_ENDPOINT = "http://kumohcheck-jud:5000/job"
 
 # 확장자 체크
 def allowed_file(filename):
@@ -165,6 +165,11 @@ def submit(id):
                 db.session.commit()
 
                 db.session.refresh(assign)
+
+                target_dir = os.path.join(current_app.config['UPLOAD_FOLDER'], assign.id)
+
+                if not os.path.exists(target_dir):
+                    os.makedirs(target_dir)
 
                 file.save(os.path.join(current_app.config['UPLOAD_FOLDER'], assign.id, filename))
                 
