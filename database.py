@@ -136,9 +136,15 @@ class TestResult(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     assignmentId = db.Column(db.Integer, db.ForeignKey('assignment.id'), nullable=False)
     testcaseId = db.Column(db.Integer, db.ForeignKey('testcase.id'), nullable=False)
-    time = db.Column(db.DateTime, nullable=False)
+    time = db.Column(db.DateTime, default=datetime.utcnow())
     success = db.Column(db.Boolean, nullable=False)
     failCause = db.Column(db.Text, nullable=True)
+
+    def __init__(self, assignmentId, testcaseId, success, failCause):
+        self.assignmentId = assignmentId
+        self.testcaseId = testcaseId
+        self.success = success
+        self.failCause = failCause
        
 class TokenBlocklist(db.Model):
     id = db.Column(db.Integer, primary_key=True)

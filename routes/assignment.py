@@ -4,6 +4,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 import datetime
 from werkzeug.utils import secure_filename
 import os
+import requests
 
 from database import Account, Classroom, TestResult, db, AccountType, Assignment, Testcase
 
@@ -11,6 +12,11 @@ assignment = Blueprint('assignment', __name__, url_prefix='/assignment')
 
 # 업로드 허용할 확장자
 ALLOWED_EXTENSIONS = {'zip', 'java'}
+
+# 채점 서버 사용할건지
+JUDGEMENT_ENABLED = False
+# 채점 서버 Job endpoint
+JUDGEMENT_ENDPOINT = "http://localhost:3000/job"
 
 # 확장자 체크
 def allowed_file(filename):
@@ -94,11 +100,11 @@ def modify(id):
     assign = Assignment.query.filter_by(id=id).first()
 
     # 권한 체크 필요
-
     assign.title = data['title']
     assign.desc = data['desc']
-    assign.startDate = data['start_date']
-    assign.endDate = data['end_date']
+    # 원래 코드에서 datetime으로 변환하지 않은 상태로 값을 넣으니 문제가 발생
+    assign.startDate = datetime.datetime.strptime(data['start_date'], '%Y-%m-%dT%H:%M:%S.%f')
+    assign.endDate = datetime.datetime.strptime(data['end_date'], '%Y-%m-%dT%H:%M:%S.%f')
 
     try:
         db.session.commit()
@@ -137,6 +143,54 @@ def delete(id):
 @jwt_required()
 def submit(id):
     userId = get_jwt_identity()
+    data = request.form
+    
+    # "~/VSCode\kit_judge_testDB_venv" = 로컬 백서버 테스트 환경
+    path = "kit_judge_testDB_venv" + "\\" + current_app.config['UPLOAD_FOLDER'] + "\\" 
+    
+    # 확장자 확인 (.zip / .java) / 파일 하나만 업로드
+    file = request.files.get('file') # formData에서의 키 값이 file인 value
+    if file != None: # 업로드 / 미업로드 확인
+        if file and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            file.save(path + filename)
+
+            assignment = Assignment.query.filter_by(id=id).first();
+            assign = Assignment(userId, assignment.classroomId, None, data.get('desc'), None, None)
+            assign.parentId = id
+            assign.filename = filename
+
+            try:
+                db.session.add(assign)
+                db.session.commit()
+
+                db.session.refresh(assign)
+
+                file.save(os.path.join(current_app.config['UPLOAD_FOLDER'], assign.id, filename))
+                
+                if JUDGEMENT_ENABLED:
+                    parent_testcases = Testcase.query.filter_by(assignmentId=id)
+                    testcase_ids = [testcase.id for testcase in parent_testcases]
+                    data = {'assignment_id': assign.id, 'testcase_ids': testcase_ids, 'filename': filename}
+                    resp = requests.post(url=JUDGEMENT_ENDPOINT, data=data)
+
+                return '', 200
+
+            except Exception as e:
+                return jsonify({'error': str(e)}), 500
+            
+        else: # 확장자 미일치 및 파일 미업로드
+            return jsonify({'error': 'extension missmatch'}), 520
+        
+    else:
+        return jsonify({'error': 'file not uploaded'}), 521
+
+
+# 과제 제출 (학생)
+@assignment.route('/<id>/submit', methods=['POST'])
+@jwt_required()
+def submit(id):
+    userId = get_jwt_identity()
     data = request.form.get('data')
 
     # check if the post request has the file part
@@ -149,7 +203,6 @@ def submit(id):
         return jsonify({'error': 'Blank file submitted'}), 400
     if file and allowed_file(file.filename):
         filename = secure_filename(file.filename)
-        file.save(os.path.join(current_app.config['UPLOAD_FOLDER'], filename))
 
         assign = Assignment(userId, data['classroom_id'], None, data['desc'], None, None)
         assign.parentId = id
@@ -161,7 +214,21 @@ def submit(id):
         except Exception as e:
             return jsonify({'error': str(e)}), 500
 
+        db.session.refresh(assign)
+
+        file.save(os.path.join(current_app.config['UPLOAD_FOLDER'], assign.id, filename))
+        
+        if JUDGEMENT_ENABLED:
+            parent_testcases = Testcase.query.filter_by(assignmentId=id)
+            testcase_ids = [testcase.id for testcase in parent_testcases]
+            data = {'assignment_id': assign.id, 'testcase_ids': testcase_ids, 'filename': filename}
+            resp = requests.post(url=JUDGEMENT_ENDPOINT, data=data)
+            if resp.status_code != 200:
+                return jsonify({'warning': 'Failed to query judgement server'}), 200
+
         return '', 200
+    
+    return jsonify({'error': 'Not allowed file types!'}), 400
 
 # 제출 과제 조회 (교수)
 @assignment.route('/<id>/submissions', methods=['GET'])
