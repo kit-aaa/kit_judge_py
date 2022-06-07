@@ -261,12 +261,17 @@ def lookup_testresult(id):
         return jsonify({'error': 'Account disabled'}), 403
     
     ## 추가된 부분 접속자(학생)id, 과제id로 학생이 제출한 과제의id 값 검색
-    assignment = Assignment.query.filter_by(parentId=id, authorId=userId).first()
+    assigns = Assignment.query.filter_by(parentId=id, authorId=userId)
     
     #print(assignment)
-    if (assignment == None):
+    if (assigns == None):
         return 'No submitted assignment', 440
+
+    testResults = []
     
-    testResults = TestResult.query.filter_by(assignmentId=assignment.id)
+    for assign in assigns:
+        testResults = [testresult for testresult in TestResult.query.filter_by(assignmentId=assign.id)]
+    
+    #testResults = TestResult.query.filter_by(assignmentId=assignment.id)
     
     return jsonify([{'id': result.id, 'assignment_id': result.assignmentId, "testcase_id": result.testcaseId, "date": result.time, "is_success": result.success, "fail_cause": result.failCause} for result in testResults]), 200
