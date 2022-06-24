@@ -5,6 +5,7 @@ import datetime
 from werkzeug.utils import secure_filename
 import os
 import requests
+import json
 
 from database import Account, Classroom, TestResult, db, AccountType, Assignment, Testcase
 
@@ -16,7 +17,7 @@ ALLOWED_EXTENSIONS = {'zip', 'java'}
 # 채점 서버 사용할건지
 JUDGEMENT_ENABLED = True
 # 채점 서버 Job endpoint
-JUDGEMENT_ENDPOINT = "http://kumohcheck.d-o-g.fun:8787/job"
+JUDGEMENT_ENDPOINT = "http://localhost:4000/job"
 
 # 확장자 체크
 def allowed_file(filename):
@@ -165,18 +166,22 @@ def submit(id):
 
                 db.session.refresh(assign)
 
-                target_dir = os.path.join(current_app.config['UPLOAD_FOLDER'], assign.id)
+                target_dir = os.path.join(current_app.config['UPLOAD_FOLDER'], str(assign.id))
 
                 if not os.path.exists(target_dir):
                     os.makedirs(target_dir)
 
-                file.save(os.path.join(current_app.config['UPLOAD_FOLDER'], assign.id, filename))
+                file.save(os.path.join(current_app.config['UPLOAD_FOLDER'], str(assign.id), filename))
                 
                 if JUDGEMENT_ENABLED:
                     parent_testcases = Testcase.query.filter_by(assignmentId=id)
                     testcase_ids = [testcase.id for testcase in parent_testcases]
                     data = {'assignment_id': assign.id, 'testcase_ids': testcase_ids, 'filename': filename}
-                    resp = requests.post(url=JUDGEMENT_ENDPOINT, data=data)
+                    headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
+                    print("sending this: ", json.dumps(data))
+                    resp = requests.post(url=JUDGEMENT_ENDPOINT, headers=headers, data=json.dumps(data))
+                    if resp.status_code != 200:
+                        print(resp.text)
 
                 return '', 200
 
@@ -255,6 +260,18 @@ def lookup_testresult(id):
     if user.disabled:
         return jsonify({'error': 'Account disabled'}), 403
     
-    testResults = TestResult.query.filter_by(assignmentId=id)
+    ## 추가된 부분 접속자(학생)id, 과제id로 학생이 제출한 과제의id 값 검색
+    assigns = Assignment.query.filter_by(parentId=id, authorId=userId)
+    
+    #print(assignment)
+    if (assigns == None):
+        return 'No submitted assignment', 440
+
+    testResults = []
+    
+    for assign in assigns:
+        testResults = [testresult for testresult in TestResult.query.filter_by(assignmentId=assign.id)]
+    
+    #testResults = TestResult.query.filter_by(assignmentId=assignment.id)
     
     return jsonify([{'id': result.id, 'assignment_id': result.assignmentId, "testcase_id": result.testcaseId, "date": result.time, "is_success": result.success, "fail_cause": result.failCause} for result in testResults]), 200

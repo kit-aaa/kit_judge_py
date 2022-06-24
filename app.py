@@ -19,7 +19,7 @@ app.config['SECRET_KEY'] = 'CHANGEME!'
 app.config['JWT_SECRET_KEY'] = 'CHANGEMEPLZ!'
 app.config["JWT_ACCESS_TOKEN_EXPIRES"] = ACCESS_EXPIRES
 
-app.config['UPLOAD_FOLDER'] = 'uploads'
+app.config['UPLOAD_FOLDER'] = '/home/helloks/judgement_server/uploads'
 
 jwt = JWTManager(app)
 
@@ -52,5 +52,5 @@ if __name__ == "__main__":
     #populate_data.populate()
 
     # 프로덕션에서 bind ip 변경할 것
-    server = WSGIServer(('0.0.0.0', 5000), app)
+    server = WSGIServer(('0.0.0.0', 7000), app)
     server.serve_forever()
